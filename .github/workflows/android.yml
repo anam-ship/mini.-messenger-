@@ -26,8 +26,14 @@ jobs:
 
       - name: Install Android Build Tools
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "build-tools;34.0.0"
+          SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK_ROOT"
+          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses
+          sdkmanager --sdk_root="$SDK_ROOT" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;34.0.0"
+
 
       - name: Install dependencies
         run: |
