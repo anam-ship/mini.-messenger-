@@ -51,17 +51,19 @@ jobs:
           test -x "$ANDROID_HOME/cmdline-tools/22.0/bin/sdkmanager"
           test -x "$ANDROID_HOME/build-tools/34.0.0/aidl"
 
-      - name: Check Android AIDL
+      - name: Diagnose Android SDK
         shell: bash
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "SDK manager:"
-          command -v sdkmanager || true
-          echo "AIDL files:"
+          echo "SDK manager locations:"
+          find /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null || true
+          echo "AIDL locations:"
           find /usr/local/lib/android/sdk -type f -name aidl 2>/dev/null || true
-          echo "Buildozer SDK:"
+          echo "Buildozer SDK folders:"
           ls -la "$HOME/.buildozer/android/platform/android-sdk" || true
+          ls -la "$HOME/.buildozer/android/platform/android-sdk/build-tools" || true
+
 
 
       - name: Build APK
