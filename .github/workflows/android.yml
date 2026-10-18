@@ -1,4 +1,4 @@
- 
+
 name: Build Android APK
 
 on:
@@ -25,7 +25,7 @@ jobs:
         with:
           packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
 
-      - name: Install dependencies
+      - name: Install Linux dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -42,29 +42,33 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install "Cython==0.29.36" buildozer
-      - name: Configure Android SDK
-        run: |
-          echo "ANDROIDSDK=$ANDROID_HOME" >> "$GITHUB_ENV"
-          echo "ANDROIDNDK=$ANDROID_NDK_HOME" >> "$GITHUB_ENV"
-          echo "ANDROIDAPI=35" >> "$GITHUB_ENV"
-          echo "ANDROIDMINAPI=23" >> "$GITHUB_ENV"
-          test -x "$ANDROID_HOME/cmdline-tools/22.0/bin/sdkmanager"
-          test -x "$ANDROID_HOME/build-tools/34.0.0/aidl"
 
-      - name: Diagnose Android SDK
+      - name: Connect Android SDK to Buildozer
         shell: bash
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-          echo "SDK manager locations:"
-          find /usr/local/lib/android/sdk -type f -name sdkmanager 2>/dev/null || true
-          echo "AIDL locations:"
-          find /usr/local/lib/android/sdk -type f -name aidl 2>/dev/null || true
-          echo "Buildozer SDK folders:"
-          ls -la "$HOME/.buildozer/android/platform/android-sdk" || true
-          ls -la "$HOME/.buildozer/android/platform/android-sdk/build-tools" || true
+          set -euxo pipefail
 
+          REAL_SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          SDKMANAGER="$(find "$REAL_SDK/cmdline-tools" \
+            -type f -name sdkmanager | head -n 1)"
 
+          test -n "$SDKMANAGER"
+          test -x "$REAL_SDK/build-tools/34.0.0/aidl"
+
+          mkdir -p "$REAL_SDK/tools/bin"
+          ln -sf "$SDKMANAGER" "$REAL_SDK/tools/bin/sdkmanager"
+
+          BUILD_SDK="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$(dirname "$BUILD_SDK")"
+          rm -rf "$BUILD_SDK"
+          ln -s "$REAL_SDK" "$BUILD_SDK"
+
+          echo "ANDROIDSDK=$BUILD_SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$BUILD_SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$BUILD_SDK" >> "$GITHUB_ENV"
+
+          "$BUILD_SDK/tools/bin/sdkmanager" --version
+          "$BUILD_SDK/build-tools/34.0.0/aidl" || test "$?" -eq 1
 
       - name: Build APK
         run: buildozer -v android debug
