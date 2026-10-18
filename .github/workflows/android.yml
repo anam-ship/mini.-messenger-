@@ -42,23 +42,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install "Cython==0.29.36" buildozer
-
-      - name: Prepare SDK for Buildozer
-        shell: bash
+      - name: Configure Android SDK
         run: |
-          set -e
-          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
-          echo "SDK path: $SDK"
-          test -n "$SDK"
-          SDK="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$SDK/tools/bin"
-          CMD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools" \
-            -type f -name sdkmanager | head -n 1)"
-          test -n "$CMD_TOOLS"
-          ln -sf "$CMD_TOOLS" "$SDK/tools/bin/sdkmanager"
-          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/platform-tools" "$SDK/platform-tools"
-          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" "$SDK/build-tools"
-          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/platforms" "$SDK/platforms"
+          echo "ANDROIDSDK=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROIDNDK=$ANDROID_NDK_HOME" >> "$GITHUB_ENV"
+          echo "ANDROIDAPI=35" >> "$GITHUB_ENV"
+          echo "ANDROIDMINAPI=23" >> "$GITHUB_ENV"
+          test -x "$ANDROID_HOME/cmdline-tools/22.0/bin/sdkmanager"
+          test -x "$ANDROID_HOME/build-tools/34.0.0/aidl"
+
 
       - name: Build APK
         run: buildozer -v android debug
