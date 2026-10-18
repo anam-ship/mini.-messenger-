@@ -1,4 +1,11 @@
- 
+      - name: Fix Buildozer SDK Manager Path
+        run: |
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK/tools/bin"
+          ln -sf "$(command -v sdkmanager)" "$SDK/tools/bin/sdkmanager"
+
+      - name: Build APK
+        run: buildozer -v android debug 
 name: Build Android APK
 
 on:
