@@ -1,11 +1,4 @@
-      - name: Fix Buildozer SDK Manager Path
-        run: |
-          SDK="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$SDK/tools/bin"
-          ln -sf "$(command -v sdkmanager)" "$SDK/tools/bin/sdkmanager"
-
-      - name: Build APK
-        run: buildozer -v android debug 
+ 
 name: Build Android APK
 
 on:
@@ -26,21 +19,11 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools platforms;android-35 build-tools;34.0.0'
-
-      - name: Install Android Build Tools
-        run: |
-          SDK_ROOT="$HOME/.buildozer/android/platform/android-sdk"
-          mkdir -p "$SDK_ROOT"
-          yes | sdkmanager --sdk_root="$SDK_ROOT" --licenses
-          sdkmanager --sdk_root="$SDK_ROOT" \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;34.0.0"
-
 
       - name: Install dependencies
         run: |
@@ -60,6 +43,23 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install "Cython==0.29.36" buildozer
 
+      - name: Prepare SDK for Buildozer
+        shell: bash
+        run: |
+          set -e
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          echo "SDK path: $SDK"
+          test -n "$SDK"
+          SDK="$HOME/.buildozer/android/platform/android-sdk"
+          mkdir -p "$SDK/tools/bin"
+          CMD_TOOLS="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/cmdline-tools" \
+            -type f -name sdkmanager | head -n 1)"
+          test -n "$CMD_TOOLS"
+          ln -sf "$CMD_TOOLS" "$SDK/tools/bin/sdkmanager"
+          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/platform-tools" "$SDK/platform-tools"
+          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" "$SDK/build-tools"
+          ln -sfn "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/platforms" "$SDK/platforms"
+
       - name: Build APK
         run: buildozer -v android debug
 
@@ -69,4 +69,5 @@ jobs:
           name: Mini-Messenger-APK
           path: bin/*.apk
           if-no-files-found: error
+
 
